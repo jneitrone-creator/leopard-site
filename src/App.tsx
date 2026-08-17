@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
 import { RolePains } from './components/RolePains';
@@ -15,11 +15,13 @@ import { PricingSection } from './components/PricingSection';
 import { ProcessTimeline } from './components/ProcessTimeline';
 import { FaqSection } from './components/FaqSection';
 import { ContactFooter } from './components/ContactFooter';
-import { BotDemoSimulator } from './components/BotDemoSimulator';
-import { AuditModal } from './components/AuditModal';
-import { ImageGeneratorModal } from './components/ImageGeneratorModal';
 import { FloatingActions } from './components/FloatingActions';
 import { LeftScrollProgress } from './components/LeftScrollProgress';
+
+// Modals are loaded on demand (opened by user interaction) so the initial bundle stays small
+const BotDemoSimulator = lazy(() => import('./components/BotDemoSimulator').then(m => ({ default: m.BotDemoSimulator })));
+const AuditModal = lazy(() => import('./components/AuditModal').then(m => ({ default: m.AuditModal })));
+const ImageGeneratorModal = lazy(() => import('./components/ImageGeneratorModal').then(m => ({ default: m.ImageGeneratorModal })));
 
 export default function App() {
   const [isAuditModalOpen, setIsAuditModalOpen] = useState<boolean>(false);
@@ -166,26 +168,34 @@ export default function App() {
         onOpenAudit={handleOpenAudit}
       />
 
-      {/* Global Modals & Interactive Overlays */}
-      <BotDemoSimulator 
-        isOpen={isBotDemoOpen}
-        onClose={handleCloseBotDemo}
-        onOpenAudit={handleOpenAudit}
-      />
+      {/* Global Modals & Interactive Overlays (lazy-loaded on demand) */}
+      <Suspense fallback={null}>
+        {isBotDemoOpen && (
+          <BotDemoSimulator
+            isOpen={isBotDemoOpen}
+            onClose={handleCloseBotDemo}
+            onOpenAudit={handleOpenAudit}
+          />
+        )}
 
-      <AuditModal 
-        isOpen={isAuditModalOpen}
-        onClose={handleCloseAudit}
-        source={auditSource}
-        tierTitle={selectedTier}
-        lossData={calculatedLoss}
-        packageData={packageData}
-      />
+        {isAuditModalOpen && (
+          <AuditModal
+            isOpen={isAuditModalOpen}
+            onClose={handleCloseAudit}
+            source={auditSource}
+            tierTitle={selectedTier}
+            lossData={calculatedLoss}
+            packageData={packageData}
+          />
+        )}
 
-      <ImageGeneratorModal 
-        isOpen={isImageGenOpen}
-        onClose={handleCloseImageGen}
-      />
+        {isImageGenOpen && (
+          <ImageGeneratorModal
+            isOpen={isImageGenOpen}
+            onClose={handleCloseImageGen}
+          />
+        )}
+      </Suspense>
 
       {/* Floating Speed-Dial Contact and Demo Launcher */}
       <FloatingActions 
